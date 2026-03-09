@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IBEX Price Sensor",
+        "description": "Configure the IBEX price sensor to fetch electricity market prices.",
+        "data": {
+          "scan_interval": "Update Interval (seconds)",
+          "timezone": "Timezone",
+          "api_endpoint": "API Endpoint"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "IBEX Price Sensor Options",
+        "description": "Configure options for the IBEX price sensor.",
+        "data": {
+          "scan_interval": "Update Interval (seconds)",
+          "timezone": "Timezone",
+          "api_endpoint": "API Endpoint"
+        }
+      }
+    }
+  }
+}

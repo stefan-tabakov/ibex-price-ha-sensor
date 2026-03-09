@@ -1,0 +1,10 @@
+{
+  "name": "IBEX Price Sensor",
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "ibex_price.zip",
+  "render_readme": true,
+  "domains": ["ibex_price"],
+  "homeassistant": "2023.1.0",
+  "persistent_directory": false
+}
