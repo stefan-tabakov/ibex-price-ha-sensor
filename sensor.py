@@ -40,6 +40,19 @@ async def async_setup_entry(hass, config_entry, add_entities):
     add_entities([_sensor_instance])
 
 
+async def async_unload_entry(hass, config_entry):
+    """Unload a config entry."""
+    global _sensor_instance
+    
+    # Clean up singleton instance
+    if _sensor_instance is not None:
+        if hasattr(_sensor_instance, '_session') and _sensor_instance._session:
+            _sensor_instance._session.close()
+        _sensor_instance = None
+    
+    return True
+
+
 class IbexPriceSensor(SensorEntity):
     def __init__(self, scan_interval, timezone, api_endpoint):
         self._name = DEFAULT_NAME
