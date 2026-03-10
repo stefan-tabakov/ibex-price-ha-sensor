@@ -7,6 +7,9 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
 
+from . import config_flow
+__all__ = ["config_flow"]
+
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
@@ -18,6 +21,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry) -> bool:
     """Set up IBEX Price from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
