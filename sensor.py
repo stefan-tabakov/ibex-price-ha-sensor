@@ -6,10 +6,8 @@ import random
 import pytz
 import requests
 
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_SCAN_INTERVAL
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 from .const import (
     DOMAIN, 
@@ -26,22 +24,16 @@ _LOGGER = logging.getLogger(__name__)
 # Singleton instance to prevent multiple sensors
 _sensor_instance = None
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=60)),
-    vol.Optional(CONF_TIMEZONE, default=DEFAULT_TIMEZONE): vol.Coerce(str),
-    vol.Optional(CONF_API_ENDPOINT, default=DEFAULT_API_ENDPOINT): vol.Coerce(str),
-})
 
-
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up IBEX Price sensor platform."""
+async def async_setup_entry(hass, config_entry, add_entities):
+    """Set up IBEX Price sensor from config entry."""
     global _sensor_instance
     
     # Only create sensor if it doesn't exist
     if _sensor_instance is None:
-        scan_interval = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        timezone = config.get(CONF_TIMEZONE, DEFAULT_TIMEZONE)
-        api_endpoint = config.get(CONF_API_ENDPOINT, DEFAULT_API_ENDPOINT)
+        scan_interval = config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        timezone = config_entry.data.get(CONF_TIMEZONE, DEFAULT_TIMEZONE)
+        api_endpoint = config_entry.data.get(CONF_API_ENDPOINT, DEFAULT_API_ENDPOINT)
         
         _sensor_instance = IbexPriceSensor(scan_interval, timezone, api_endpoint)
     
@@ -57,6 +49,7 @@ class IbexPriceSensor(SensorEntity):
         self._state_eur = None
         self._cached_prices = {}
         self._cached_day = None
+        self._session = None
         self._attr_icon = "mdi:cash-clock"
         self._attr_unique_id = "ibex_current_price_eur_mwh"
         self._attr_native_unit_of_measurement = "EUR/MWh"
@@ -119,7 +112,7 @@ class IbexPriceSensor(SensorEntity):
             _LOGGER.info(f"Fetching IBEX prices for date: {today}")
             
             # Initialize session if needed
-            if not hasattr(self, '_session'):
+            if self._session is None:
                 self._session = requests.Session()
                 self._session.headers.update({
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
@@ -219,4 +212,10 @@ class IbexPriceSensor(SensorEntity):
         except Exception as e:
             _LOGGER.error(f"Error while loading prices from IBEX: {e}")
             self._state_eur = None
+    
+    def __del__(self):
+        """Cleanup session when sensor is destroyed."""
+        if self._session:
+            self._session.close()
+            _LOGGER.debug("Closed HTTP session")
             
