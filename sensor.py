@@ -21,23 +21,14 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Singleton instance to prevent multiple sensors
-_sensor_instance = None
-
-
-async def async_setup_entry(hass, config_entry, add_entities):
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up IBEX Price sensor from config entry."""
-    global _sensor_instance
-    
-    # Only create sensor if it doesn't exist
-    if _sensor_instance is None:
-        scan_interval = config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        timezone = config_entry.data.get(CONF_TIMEZONE, DEFAULT_TIMEZONE)
-        api_endpoint = config_entry.data.get(CONF_API_ENDPOINT, DEFAULT_API_ENDPOINT)
-        
-        _sensor_instance = IbexPriceSensor(scan_interval, timezone, api_endpoint)
-    
-    add_entities([_sensor_instance])
+    scan_interval = config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    timezone = config_entry.data.get(CONF_TIMEZONE, DEFAULT_TIMEZONE)
+    api_endpoint = config_entry.data.get(CONF_API_ENDPOINT, DEFAULT_API_ENDPOINT)
+
+    sensor = IbexPriceSensor(config_entry.entry_id, scan_interval, timezone, api_endpoint)
+    async_add_entities([sensor])
 
 
 async def async_unload_entry(hass, config_entry):
@@ -54,7 +45,8 @@ async def async_unload_entry(hass, config_entry):
 
 
 class IbexPriceSensor(SensorEntity):
-    def __init__(self, scan_interval, timezone, api_endpoint):
+    def __init__(self, entry_id, scan_interval, timezone, api_endpoint):
+        self._entry_id = entry_id
         self._name = DEFAULT_NAME
         self._scan_interval = scan_interval
         self._timezone = timezone
@@ -66,6 +58,7 @@ class IbexPriceSensor(SensorEntity):
         self._attr_icon = "mdi:cash-clock"
         self._attr_unique_id = "ibex_current_price_eur_mwh"
         self._attr_native_unit_of_measurement = "EUR/MWh"
+        self._attr_has_entity_name = True
 
     @property
     def name(self):
@@ -226,9 +219,9 @@ class IbexPriceSensor(SensorEntity):
             _LOGGER.error(f"Error while loading prices from IBEX: {e}")
             self._state_eur = None
     
-    def __del__(self):
-        """Cleanup session when sensor is destroyed."""
+    async def async_will_remove_from_hass(self):
+        """Cleanup session when entity is removed."""
         if self._session:
             self._session.close()
+            self._session = None
             _LOGGER.debug("Closed HTTP session")
-            
