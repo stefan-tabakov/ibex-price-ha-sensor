@@ -8,6 +8,7 @@ from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN
 
 from . import config_flow
+from . import sensor
 __all__ = ["config_flow"]
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -29,6 +30,10 @@ async def async_setup_entry(hass: HomeAssistant, entry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry) -> bool:
     """Unload a config entry."""
+    # Call sensor cleanup first
+    await sensor.async_unload_entry(hass, entry)
+    
+    # Then unload platforms and clean up data
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
