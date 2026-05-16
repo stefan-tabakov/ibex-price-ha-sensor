@@ -62,6 +62,7 @@ This integration fetches data from the official IBEX (Independent Bulgarian Ener
 
 ## Version History
 
+- **v2.1**: Added `next_price_eur_mwh` and `next_price_eur_kwh` attributes for next 15-minute interval
 - **v2.0**: Migrated to new JSON API with 15-minute interval pricing
 - **v1.0**: Initial release with HTML scraping and hourly pricing
 

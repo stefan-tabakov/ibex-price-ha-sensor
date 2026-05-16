@@ -20,5 +20,4 @@ env/
 # macOS
 .DS_Store
 
-# Archives
-*.zip
+# Archives (ibex_price.zip is intentionally tracked for HACS releases)
