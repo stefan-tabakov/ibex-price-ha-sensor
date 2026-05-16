@@ -19,6 +19,3 @@ env/
 
 # macOS
 .DS_Store
-
-# Archives
-*.zip
