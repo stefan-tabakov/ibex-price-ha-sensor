@@ -52,6 +52,7 @@ class IbexPriceSensor(SensorEntity):
         self._timezone = timezone
         self._api_endpoint = api_endpoint
         self._state_eur = None
+        self._next_state_eur = None
         self._cached_prices = {}
         self._cached_day = None
         self._session = None
@@ -74,7 +75,11 @@ class IbexPriceSensor(SensorEntity):
         
         if self._state_eur is not None:
             attributes["price_eur_kwh"] = self._state_eur / 1000
-            
+
+        if self._next_state_eur is not None:
+            attributes["next_price_eur_mwh"] = self._next_state_eur
+            attributes["next_price_eur_kwh"] = self._next_state_eur / 1000
+
         return attributes
 
     @property
@@ -199,25 +204,20 @@ class IbexPriceSensor(SensorEntity):
 
             self._cached_day = today
 
-            # Retrieve price for current time based on product type
-            if is_qh_data:
-                if current_qh in self._cached_prices:
-                    self._state_eur = self._cached_prices[current_qh]
-                    _LOGGER.debug(f"IBEX price for QH {current_qh} ({current_hour:02d}:{(current_minute // 15) * 15:02d}): EUR={self._state_eur}")
-                else:
-                    _LOGGER.warning(f"No price found in IBEX data for QH: {current_qh}")
-                    self._state_eur = None
+            # Retrieve price for current and next period
+            current_key = current_qh if is_qh_data else current_hour
+            if current_key in self._cached_prices:
+                self._state_eur = self._cached_prices[current_key]
+                _LOGGER.debug(f"IBEX price for key {current_key}: EUR={self._state_eur}")
             else:
-                if current_hour in self._cached_prices:
-                    self._state_eur = self._cached_prices[current_hour]
-                    _LOGGER.debug(f"IBEX price for PH {current_hour + 1} (hour {current_hour:02d}): EUR={self._state_eur}")
-                else:
-                    _LOGGER.warning(f"No price found in IBEX data for hour: {current_hour}")
-                    self._state_eur = None
+                _LOGGER.warning(f"No price found in IBEX data for key: {current_key}")
+                self._state_eur = None
+            self._next_state_eur = self._cached_prices.get(current_key + 1)
 
         except Exception as e:
             _LOGGER.error(f"Error while loading prices from IBEX: {e}")
             self._state_eur = None
+            self._next_state_eur = None
     
     async def async_will_remove_from_hass(self):
         """Cleanup session when entity is removed."""
