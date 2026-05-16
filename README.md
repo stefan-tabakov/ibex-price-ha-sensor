@@ -49,8 +49,12 @@ The integration requires minimal configuration:
 The sensor provides:
 
 - **State**: Current price in EUR/MWh
-- **Attributes**: 
-  - `price_eur_kwh`: Current price in EUR/kWh (for easier reading)
+- **Attributes**:
+  - `price_eur_kwh`: Current price in EUR/kWh
+  - `next_price_eur_mwh`: Price for the next 15-minute interval in EUR/MWh
+  - `next_price_eur_kwh`: Price for the next 15-minute interval in EUR/kWh
+
+> The `next_price_*` attributes are absent for the last interval of the day (23:45–00:00).
 
 ## Data Source
 
