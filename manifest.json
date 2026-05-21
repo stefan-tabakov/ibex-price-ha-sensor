@@ -1,7 +1,7 @@
 {
     "domain": "ibex_price",
     "name": "IBEX Price Sensor",
-    "version": "2.1",
+    "version": "2.1.1",
     "config_flow": true,
     "requirements": ["requests", "pytz"],
     "codeowners": ["@stefan-tabakov"],
