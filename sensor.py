@@ -55,6 +55,7 @@ class IbexPriceSensor(SensorEntity):
         self._next_state_eur = None
         self._cached_prices = {}
         self._cached_day = None
+        self._is_qh_data = None
         self._session = None
         self._attr_icon = "mdi:cash-clock"
         self._attr_unique_id = "ibex_current_price_eur_mwh"
@@ -108,16 +109,13 @@ class IbexPriceSensor(SensorEntity):
 
             # Don't call IBEX if we have the prices for today
             # Check for both QH (15-minute) and PH (hourly) cached data
-            if self._cached_day == today and self._cached_prices:
-                if current_qh in self._cached_prices:
+            if self._cached_day == today and self._cached_prices and self._is_qh_data is not None:
+                current_key = current_qh if self._is_qh_data else current_hour
+                if current_key in self._cached_prices:
                     # Have QH data cached
-                    self._state_eur = self._cached_prices[current_qh]
-                    _LOGGER.debug(f"Using cached IBEX price for QH {current_qh}")
-                    return
-                elif current_hour in self._cached_prices:
-                    # Have PH data cached
-                    self._state_eur = self._cached_prices[current_hour]
-                    _LOGGER.debug(f"Using cached IBEX price for PH {current_hour + 1} (hour {current_hour})")
+                    self._state_eur = self._cached_prices[current_key]
+                    self._next_state_eur = self._cached_prices.get(current_key + 1)
+                    _LOGGER.debug(f"Using cached IBEX price for {current_key}")
                     return
 
             _LOGGER.info(f"Fetching IBEX prices for date: {today}")
@@ -173,7 +171,7 @@ class IbexPriceSensor(SensorEntity):
             
             # Detect if we have QH (15-minute) or PH (hourly) products
             first_product = data["main_data"][0]["product"]
-            is_qh_data = first_product.startswith("QH")
+            self._is_qh_data = first_product.startswith("QH")
             
             # Parse prices from main_data array
             # QH: 15-minute intervals (QH 1-96)
@@ -190,7 +188,7 @@ class IbexPriceSensor(SensorEntity):
                     eur = float(price_entry["price"])
                     
                     # Calculate cache key based on product type
-                    if is_qh_data:
+                    if self._is_qh_data:
                         # QH: use product number directly (1-96)
                         cache_key = product_num
                     else:
@@ -205,7 +203,7 @@ class IbexPriceSensor(SensorEntity):
             self._cached_day = today
 
             # Retrieve price for current and next period
-            current_key = current_qh if is_qh_data else current_hour
+            current_key = current_qh if self._is_qh_data else current_hour
             if current_key in self._cached_prices:
                 self._state_eur = self._cached_prices[current_key]
                 _LOGGER.debug(f"IBEX price for key {current_key}: EUR={self._state_eur}")
