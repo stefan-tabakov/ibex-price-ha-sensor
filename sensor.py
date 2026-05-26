@@ -81,6 +81,12 @@ class IbexPriceSensor(SensorEntity):
             attributes["next_price_eur_mwh"] = self._next_state_eur
             attributes["next_price_eur_kwh"] = self._next_state_eur / 1000
 
+        if self._cached_prices and self._is_qh_data is not None:
+            attributes["prices_today"] = [
+                self._cached_prices.get(i + 1 if self._is_qh_data else i // 4)
+                for i in range(96)
+            ]
+
         return attributes
 
     @property
