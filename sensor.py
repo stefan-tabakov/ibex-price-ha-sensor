@@ -56,6 +56,7 @@ class IbexPriceSensor(SensorEntity):
         self._cached_prices = {}
         self._cached_day = None
         self._is_qh_data = None
+        self._current_interval_index = None
         self._session = None
         self._attr_icon = "mdi:cash-clock"
         self._attr_unique_id = "ibex_current_price_eur_mwh"
@@ -87,6 +88,9 @@ class IbexPriceSensor(SensorEntity):
                 for i in range(96)
             ]
 
+        if self._current_interval_index is not None:
+            attributes["current_interval_index"] = self._current_interval_index
+
         return attributes
 
     @property
@@ -111,7 +115,8 @@ class IbexPriceSensor(SensorEntity):
             
             # Calculate current 15-minute interval (QH product number: 1-96)
             # QH 1 = 00:00-00:15, QH 2 = 00:15-00:30, etc.
-            current_qh = (current_hour * 4) + (current_minute // 15) + 1
+            self._current_interval_index = current_hour * 4 + current_minute // 15
+            current_qh = self._current_interval_index + 1
 
             # Don't call IBEX if we have the prices for today
             # Check for both QH (15-minute) and PH (hourly) cached data
